@@ -3,69 +3,88 @@ datatype RES = NONE | SOME(int);
 
 class DICT {
 
-  var d:array<ENTRY>;
-  var elems:int;
-  var tsize:int;
+  var d:array<ENTRY>; // Array que guarda o dicionário
+  var elems:int;      // Número de elementos no array
 
-  constructor (size:int)
-  modifies this, d;
-  requires size > 0;
+  constructor ()
+  modifies this;
+  ensures fresh(d);
   {
-    d := new ENTRY[size];
+
+    d := new ENTRY[8];
     elems := 0;
-    tsize := size;
+
   }
 
   method assoc(k:int, v:int)
   modifies this, d;
-  requires d != null && d.Length > elems;
+  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
   {
+
+    // Se o array já estiver cheio, duplica o seu tamanho
+    if (elems == d.Length) {
+      var b := new ENTRY[2 * d.Length];
+      forall (i | 0 <= i < elems) {
+        b[i] := d[i];
+      }
+      d := b;
+    }
+
+    // Pesquisa para saber se já existe a chave
     var x:RES := find(k);
     if (x == NONE) {
       d[elems] := PACK(k, v);
       elems := elems + 1;
     }
-    else {
-      //chave repetida
-      //TODO: saber como tratar isto
-    }
+
   }
 
   method find(k:int) returns (r:RES)
-  requires d != null && d.Length > elems;
+  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
   {
+
     var i:int := 0;
+    //Itera sobre todo o array à procura da chave
     while (i < elems) {
       if (d[i].key == k) {
+        //Se encontrou, retorna o valor pertencente à chave K
         return SOME(d[i].val);
       }
       i := i + 1;
     }
     return NONE;
+
   }
 
   method delete(k:int)
+  modifies this, d;
+  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
   {
-    var x:RES := find(k);
-    if (x == NONE) {
-      //Não existe, não apaga
+
+    // TODO: passar isto para um método auxiliar (?)
+    var i:int := 0;
+    var e:int := -1;
+
+    while (i < elems) {
+      if (d[i].key == k) {
+        e := i;
+        break;
+      }
+      i := i + 1;
     }
-    else {
-      //Existe! dá um shift no array
-      //se o find desse o indice, em javascript era assim:
-      //array.splice(find(k), 1);
-      //Mas em java, temos de criar um array temporario e copiar tudo menos o que apagamos. É muito lindo!
+
+    // Se existe a chave, apaga
+    if (e != -1) {
+
+        // Decrementamos o elems porque ficamos com menos um elemento
+        elems := elems - 1;
+
+        // shift ao array para apagar o elemento
+        forall (i | e <= i < elems) {
+          d[i] := d[i + 1];
+        }
     }
+
   }
 
-}
-
-
-class test {
-  method main() {
-
-    //ENTÃO ESTA MERDA DIZ QUE PODE DAR ERRO!! AI O CRL!!!
-    var t:DICT := new DICT(10);
-
-  }
 }
