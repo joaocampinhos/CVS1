@@ -9,6 +9,7 @@ class DICT {
   function RepInv():bool
   reads this, d;
   {
+
     // O array nunca pode ser nulo
     (d != null) &&
 
@@ -24,15 +25,14 @@ class DICT {
     //Todas as chaves devem ser únicas
     (forall i, j :: 0 <= i < elems && 0 <= j < elems ==> d[i].key != d[j].key)
 
-
   }
 
   constructor ()
   modifies this;
-  ensures fresh(d);
   ensures RepInv();
   {
 
+    // Inicia a estrutura que guarda o dicionário
     d := new ENTRY[8];
     elems := 0;
 
@@ -53,9 +53,22 @@ class DICT {
       d := b;
     }
 
-    // Pesquisa para saber se já existe a chave
-    var x:RES := find(k);
-    if (x == NONE) {
+    // TODO: passar isto para um método auxiliar (?)
+    // Verifica se a chave existe no dicionário e retorna o seu índice
+    var i:int := 0;
+    var e:int := -1;
+
+    while (i < elems) {
+      if (d[i].key == k) {
+        e := i;
+        break;
+      }
+      i := i + 1;
+    }
+    // Fim do método auxiliar
+
+    // Se ainda não existe a chave k no dicionário, adiciona
+    if (e != -1) {
       d[elems] := PACK(k, v);
       elems := elems + 1;
     }
@@ -67,15 +80,24 @@ class DICT {
   ensures RepInv();
   {
 
+    // TODO: passar isto para um método auxiliar (?)
+    // Verifica se a chave existe no dicionário e retorna o seu índice
     var i:int := 0;
-    //Itera sobre todo o array à procura da chave
+    var e:int := -1;
+
     while (i < elems) {
       if (d[i].key == k) {
-        //Se encontrou, retorna o valor pertencente à chave K
-        return SOME(d[i].val);
+        e := i;
+        break;
       }
       i := i + 1;
     }
+    // Fim do método auxiliar
+
+    if (e != -1) {
+      return SOME(d[e].val);
+    }
+
     return NONE;
 
   }
@@ -87,6 +109,7 @@ class DICT {
   {
 
     // TODO: passar isto para um método auxiliar (?)
+    // Verifica se a chave existe no dicionário e retorna o seu índice
     var i:int := 0;
     var e:int := -1;
 
@@ -97,6 +120,7 @@ class DICT {
       }
       i := i + 1;
     }
+    // Fim do método auxiliar
 
     // Se existe a chave, apaga
     if (e != -1) {
@@ -108,6 +132,24 @@ class DICT {
         forall (i | e <= i < elems) {
           d[i] := d[i + 1];
         }
+    }
+
+  }
+
+  // Métodos auxiliares
+  method getIndex(k:int) returns(e:int)
+  requires RepInv();
+  ensures RepInv();
+  {
+    var i:int := 0;
+    e := -1;
+
+    while (i < elems) {
+      if (d[i].key == k) {
+        e := i;
+        break;
+      }
+      i := i + 1;
     }
 
   }
