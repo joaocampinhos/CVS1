@@ -6,9 +6,31 @@ class DICT {
   var d:array<ENTRY>; // Array que guarda o dicionário
   var elems:int;      // Número de elementos no array
 
+  function RepInv():bool
+  reads this, d;
+  {
+    // O array nunca pode ser nulo
+    (d != null) &&
+
+    // O tamanho do array deve ser sempre positivo
+    (d.Length > 0) &&
+
+    // O número de elementos no array não pode ser superior ao seu tamanho
+    (elems <= d.Length) &&
+
+    // O número de elementos no array não pode ser negativo
+    (elems >= 0) &&
+
+    //Todas as chaves devem ser únicas
+    (forall i, j :: 0 <= i < elems && 0 <= j < elems ==> d[i].key != d[j].key)
+
+
+  }
+
   constructor ()
   modifies this;
   ensures fresh(d);
+  ensures RepInv();
   {
 
     d := new ENTRY[8];
@@ -18,7 +40,8 @@ class DICT {
 
   method assoc(k:int, v:int)
   modifies this, d;
-  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
+  requires RepInv();
+  ensures RepInv();
   {
 
     // Se o array já estiver cheio, duplica o seu tamanho
@@ -40,7 +63,8 @@ class DICT {
   }
 
   method find(k:int) returns (r:RES)
-  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
+  requires RepInv();
+  ensures RepInv();
   {
 
     var i:int := 0;
@@ -58,7 +82,8 @@ class DICT {
 
   method delete(k:int)
   modifies this, d;
-  requires d != null && elems <= d.Length && 0 < d.Length && elems >= 0;
+  requires RepInv();
+  ensures RepInv();
   {
 
     // TODO: passar isto para um método auxiliar (?)
