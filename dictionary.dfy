@@ -22,8 +22,10 @@ class DICT {
     // O número de elementos no array não pode ser negativo
     (elems >= 0) &&
 
-    //Todas as chaves devem ser únicas
-    (forall i, j :: 0 <= i < elems && 0 <= j < elems ==> d[i].key != d[j].key)
+    // Todas as chaves devem ser únicas
+    // TODO:ERRO
+    // se o i == j, as chaves são iguais logo o RepInv não bufa
+    (forall i, j :: 0 <= i < elems && 0 <= j < elems ==> d[i].key != d[j].key )
 
   }
 
@@ -42,6 +44,21 @@ class DICT {
   modifies this, d;
   requires RepInv();
   ensures RepInv();
+  ensures (
+            // Existe a chave k no dicionário e fica tudo na mesma
+            exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k && d == old(d) && old(elems) == elems
+          )
+          ||
+          (
+            // Não existe na estrutura a chave k e:
+            forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k &&
+            // O comprimento da nova estrutura é incrementado
+            d.Length == old(d.Length)+1 &&
+            // O número de elementos na nova estrutura é incrementado
+            elems == old(elems)+1 &&
+            // Na nova estrutura já existe o elemento com a chave k e valor v
+            exists j :: 0 <= j < elems ==> d[j].key == k && d[j].val == v
+          );
   {
 
     // Se o array já estiver cheio, duplica o seu tamanho
@@ -68,7 +85,7 @@ class DICT {
     // Fim do método auxiliar
 
     // Se ainda não existe a chave k no dicionário, adiciona
-    if (e != -1) {
+    if (e == -1) {
       d[elems] := PACK(k, v);
       elems := elems + 1;
     }
@@ -78,6 +95,11 @@ class DICT {
   method find(k:int) returns (r:RES)
   requires RepInv();
   ensures RepInv();
+  // Para todos os elementos no array, não existe nenhum que tenha a chave k (e o r[esultado] é NONE)
+  // OU
+  // Existe um elemento no array cuja chave é k (e o r[esultado] é o valor correspondente a essa chave)
+  ensures (forall i :: 0 <= i < elems ==> d[i].key != k && r == NONE) ||
+          (exists i :: 0 <= i < elems ==> d[i].key == k && SOME(d[i].val) == r);
   {
 
     // TODO: passar isto para um método auxiliar (?)
@@ -106,6 +128,21 @@ class DICT {
   modifies this, d;
   requires RepInv();
   ensures RepInv();
+  ensures (
+            // Não existe a chave k no dicionário e fica tudo na mesma
+            forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k && d == old(d) && old(elems) == elems
+          )
+          ||
+          (
+            // Existe na estrutura a chave k e:
+            exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k &&
+            // O comprimento da nova estrutura é decrementado
+            d.Length == old(d.Length)-1 &&
+            // O número de elementos na nova estrutura é decrementado
+            elems == old(elems)-1 &&
+            // Na nova estrutura já não existe nenhum elemento com a chave k
+            forall j :: 0 <= j < elems ==> d[j].key != k
+          );
   {
 
     // TODO: passar isto para um método auxiliar (?)
@@ -137,6 +174,9 @@ class DICT {
   }
 
   // Métodos auxiliares
+  //--------------------
+
+  // Verifica se a chave existe no dicionário e retorna o seu índice
   method getIndex(k:int) returns(e:int)
   requires RepInv();
   ensures RepInv();
