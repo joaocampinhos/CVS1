@@ -5,6 +5,11 @@ class DICT {
 
   var m:map<int, ENTRY>;
 
+  constructor ()
+  {
+
+  }
+
   method assoc(k:int, v:int)
   modifies this;
   {
