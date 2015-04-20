@@ -25,7 +25,7 @@ class DICT {
     // Todas as chaves devem ser únicas
     // TODO:ERRO
     // se o i == j, as chaves são iguais logo o RepInv não bufa
-    (forall i, j :: 0 <= i < elems && 0 <= j < elems ==> d[i].key != d[j].key )
+    ( forall i, j :: 0 <= i < elems && 0 <= j < elems && i != j ==> d[i].key != d[j].key )
 
   }
 
@@ -70,19 +70,7 @@ class DICT {
       d := b;
     }
 
-    // TODO: passar isto para um método auxiliar (?)
-    // Verifica se a chave existe no dicionário e retorna o seu índice
-    var i:int := 0;
-    var e:int := -1;
-
-    while (i < elems) {
-      if (d[i].key == k) {
-        e := i;
-        break;
-      }
-      i := i + 1;
-    }
-    // Fim do método auxiliar
+    var e:int := getIndex(k);
 
     // Se ainda não existe a chave k no dicionário, adiciona
     if (e == -1) {
@@ -98,23 +86,11 @@ class DICT {
   // Para todos os elementos no array, não existe nenhum que tenha a chave k (e o r[esultado] é NONE)
   // OU
   // Existe um elemento no array cuja chave é k (e o r[esultado] é o valor correspondente a essa chave)
-  ensures (forall i :: 0 <= i < elems ==> d[i].key != k && r == NONE) ||
+  ensures r == NONE ==> forall i :: 0 <= i < elems ==> d[i].key != k && r == NONE ||
           (exists i :: 0 <= i < elems ==> d[i].key == k && SOME(d[i].val) == r);
   {
 
-    // TODO: passar isto para um método auxiliar (?)
-    // Verifica se a chave existe no dicionário e retorna o seu índice
-    var i:int := 0;
-    var e:int := -1;
-
-    while (i < elems) {
-      if (d[i].key == k) {
-        e := i;
-        break;
-      }
-      i := i + 1;
-    }
-    // Fim do método auxiliar
+    var e:int := getIndex(k);
 
     if (e != -1) {
       return SOME(d[e].val);
@@ -130,7 +106,7 @@ class DICT {
   ensures RepInv();
   ensures (
             // Não existe a chave k no dicionário e fica tudo na mesma
-            forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k && d == old(d) && old(elems) == elems
+            forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k && d == old(d) ==> old(elems) == elems
           )
           ||
           (
@@ -145,19 +121,7 @@ class DICT {
           );
   {
 
-    // TODO: passar isto para um método auxiliar (?)
-    // Verifica se a chave existe no dicionário e retorna o seu índice
-    var i:int := 0;
-    var e:int := -1;
-
-    while (i < elems) {
-      if (d[i].key == k) {
-        e := i;
-        break;
-      }
-      i := i + 1;
-    }
-    // Fim do método auxiliar
+    var e:int := getIndex(k);
 
     // Se existe a chave, apaga
     if (e != -1) {
@@ -180,11 +144,15 @@ class DICT {
   method getIndex(k:int) returns(e:int)
   requires RepInv();
   ensures RepInv();
+  ensures (e == -1 && forall j :: 0 <= j < elems ==> d[j].key != k) || ( 0 <= e < elems && exists j :: 0 <= j < elems ==> e == j && d[j].key == k);
   {
     var i:int := 0;
     e := -1;
 
-    while (i < elems) {
+    while (i < elems)
+    invariant 0 <= i <= elems;
+    invariant (e == -1 && forall j :: 0 <= j < i ==> d[j].key != k) || ( 0 <= e < i && exists j :: 0 <= j < i ==> e == j && d[j].key == k);
+    {
       if (d[i].key == k) {
         e := i;
         break;
