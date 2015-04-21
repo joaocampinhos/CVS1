@@ -1,3 +1,10 @@
+/**
+ * CVS 2015 - 1st + 2nd Handout
+ *
+ * Authors
+ *   João Campinhos  41721
+ *   Pedro Durães    41911
+ */
 datatype ENTRY = PACK(key:int, val:int);
 datatype RES = NONE | SOME(int);
 
@@ -27,7 +34,7 @@ class DICT {
 
   }
 
-  constructor ()
+  constructor()
   modifies this;
   ensures RepInv();
   {
@@ -42,6 +49,13 @@ class DICT {
   modifies this, d;
   requires RepInv();
   ensures RepInv();
+  // Se o array estiver cheio, então o seu tamanho duplica
+  ensures old(elems) == old(d.Length) ==> d.Length == old(d.Length) * 2;
+  // Existe a chave k no dicionário e fica tudo na mesma
+  //TODO: ISTO DEVIA VERIFICAR!!!
+  //ensures old(elems) == elems ==> exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k;
+  // Não existe na estrutura a chave k e o número de elementos na nova estrutura é incrementado e já existe na nova estrutura o elemento com a chave k e valor v
+  ensures elems == old(elems)+1 ==> forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k && exists j :: 0 <= j < elems ==> d[j].key == k && d[j].val == v;
   {
 
     // Se o array já estiver cheio, duplica o seu tamanho
@@ -66,11 +80,14 @@ class DICT {
   method find(k:int) returns (r:RES)
   requires RepInv();
   ensures RepInv();
+  // Existe um elemento no array cuja chave é k (e o r[esultado] é o valor correspondente a essa chave)
+  // OU
+  // Para todos os elementos no array, não existe nenhum que tenha a chave k (e o r[esultado] é NONE)
+  ensures (exists i :: 0 <= i < elems ==> d[i].key == k ==> SOME(d[i].val) == r) || (r == NONE && forall i :: 0 <= i < elems ==> d[i].key != k);
   {
 
     var e:int := getIndex(k);
 
-    // Se existe, retorna o seu valor
     if (e != -1) {
       return SOME(d[e].val);
     }
@@ -83,16 +100,19 @@ class DICT {
   modifies this, d;
   requires RepInv();
   ensures RepInv();
+  // Existe a chave k no dicionário e fica tudo na mesma
+  ensures old(elems) == elems ==> forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k;
+  // Existe na estrutura a chave k e o número de elementos na nova estrutura é decrementado e já não existe na nova estrutura o elemento com a chave k
+  //TODO: ISTO DEVIA VERIFICAR!!!
+  //ensures elems == old(elems)-1 ==> exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k && forall j :: 0 <= j < elems ==> d[j].key != k;
   {
 
     var e:int := getIndex(k);
 
     // Se existe a chave, apaga
     if (e != -1) {
-
         // Decrementamos o elems porque ficamos com menos um elemento
         elems := elems - 1;
-
 
         // shift ao array para apagar o elemento
         forall (i | e <= i < elems) {
@@ -102,6 +122,7 @@ class DICT {
 
   }
 
+
   // Métodos auxiliares
   //--------------------
 
@@ -109,14 +130,18 @@ class DICT {
   method getIndex(k:int) returns(e:int)
   requires RepInv();
   ensures RepInv();
-  ensures (e == -1 && forall j :: 0 <= j < elems ==> d[j].key != k) || ( 0 <= e < elems && exists j :: 0 <= j < elems ==> e == j && d[j].key == k);
+  ensures 0 <= e < elems || e == -1;
+  ensures e == -1 ==> forall j :: 0 <= j < elems ==> d[j].key != k;
+  ensures 0 <= e < elems ==> exists j :: 0 <= j < elems ==> e == j && d[j].key == k;
   {
+
     var i:int := 0;
     e := -1;
 
     while (i < elems)
     invariant 0 <= i <= elems;
-    invariant (e == -1 && forall j :: 0 <= j < i ==> d[j].key != k) || ( 0 <= e < i && exists j :: 0 <= j < i ==> e == j && d[j].key == k);
+    invariant e == -1 ==> forall j :: 0 <= j < i ==> d[j].key != k;
+    invariant 0 <= e < i ==> exists j :: 0 <= j < i ==> e == j && d[j].key == k;
     {
       if (d[i].key == k) {
         e := i;
