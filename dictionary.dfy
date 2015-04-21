@@ -52,8 +52,7 @@ class DICT {
   // Se o array estiver cheio, então o seu tamanho duplica
   ensures old(elems) == old(d.Length) ==> d.Length == old(d.Length) * 2;
   // Existe a chave k no dicionário e fica tudo na mesma
-  //TODO: ISTO DEVIA VERIFICAR!!!
-  //ensures old(elems) == elems ==> exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k;
+  ensures old(elems) == elems ==> exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k;
   // Não existe na estrutura a chave k e o número de elementos na nova estrutura é incrementado e já existe na nova estrutura o elemento com a chave k e valor v
   ensures elems == old(elems)+1 ==> forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k && exists j :: 0 <= j < elems ==> d[j].key == k && d[j].val == v;
   {
@@ -103,8 +102,7 @@ class DICT {
   // Existe a chave k no dicionário e fica tudo na mesma
   ensures old(elems) == elems ==> forall i :: 0 <= i < old(elems) ==> old(d[i].key) != k;
   // Existe na estrutura a chave k e o número de elementos na nova estrutura é decrementado e já não existe na nova estrutura o elemento com a chave k
-  //TODO: ISTO DEVIA VERIFICAR!!!
-  //ensures elems == old(elems)-1 ==> exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k && forall j :: 0 <= j < elems ==> d[j].key != k;
+  ensures (elems == old(elems)-1) ==> (exists i :: 0 <= i < old(elems) ==> old(d[i].key) == k && forall j :: 0 <= j < elems ==> d[j].key != k);
   {
 
     var e:int := getIndex(k);
@@ -130,9 +128,10 @@ class DICT {
   method getIndex(k:int) returns(e:int)
   requires RepInv();
   ensures RepInv();
-  ensures 0 <= e < elems || e == -1;
-  ensures e == -1 ==> forall j :: 0 <= j < elems ==> d[j].key != k;
-  ensures 0 <= e < elems ==> exists j :: 0 <= j < elems ==> e == j && d[j].key == k;
+  // O resultado é -1, logo todas as chaves do array são diferentes de k
+  ensures e == -1 ==> (forall j :: 0 <= j < elems ==> d[j].key != k);
+  // O resultado é -1, logo esse resultado está dentro dos limites do array e a chave do elemento nesse indice é igual a k
+  ensures e != -1 ==> 0 <= e < elems && d[e].key == k;
   {
 
     var i:int := 0;
@@ -141,7 +140,7 @@ class DICT {
     while (i < elems)
     invariant 0 <= i <= elems;
     invariant e == -1 ==> forall j :: 0 <= j < i ==> d[j].key != k;
-    invariant 0 <= e < i ==> exists j :: 0 <= j < i ==> e == j && d[j].key == k;
+    invariant e != -1 ==> 0 <= e < i && d[e].key == k;
     {
       if (d[i].key == k) {
         e := i;
